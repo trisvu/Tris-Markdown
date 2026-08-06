@@ -1,4 +1,4 @@
-# md.tris.work
+# Tris Markdown
 Markdown preview and editor
 
 
