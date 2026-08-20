@@ -12,8 +12,13 @@
 
 <script defer src="vendor/marked.min.js"></script>
 <script defer src="vendor/purify.min.js"></script>
-<script defer src="vendor/highlight.min.js"></script>
 <script defer src="vendor/js-yaml.min.js"></script>
+<!-- highlight.js (149KB, all languages) is no longer loaded here. Most
+     documents have zero fenced code blocks, so it's fetched on demand —
+     see ensureHljsLoaded() in app.js — the same lazy pattern already used
+     for Mermaid and MathJax. This lets first paint happen without waiting
+     on a bundle most page loads never need. -->
+
 
 <script>
   window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
