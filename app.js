@@ -35,11 +35,6 @@
     activeId = t.id;
   }
 
-  // The sample tab is fully editable during a session (toolbar, typing —
-  // same as any other tab), but any edits to it are meant to be scratch:
-  // every fresh page load snaps its content back to SAMPLE_MD, regardless
-  // of what got saved to localStorage while editing it. Other tabs are
-  // untouched.
   function resetBuiltinContent() {
     tabs.forEach(t => { if (t.builtin) t.content = SAMPLE_MD; });
   }
@@ -350,12 +345,7 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
     if (lang === 'mermaid') {
       return `<div class="mermaid">${escapeHtml(code)}</div>`;
     }
-    // Syntax highlighting is applied progressively AFTER hljs finishes
-    // loading (see ensureHljsLoaded()/render()) — this renderer just emits
-    // plain escaped code so first paint never waits on the 149KB hljs
-    // bundle, even for documents that do have code blocks. The
-    // data-hl-pending marker is how render() finds blocks to upgrade once
-    // the library is available.
+
     const langClass = lang ? ' language-' + escapeHtml(lang) : '';
     return `<pre><button class="fmt-btn mdv-code-copy" data-copy title="Copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button><code class="hljs${langClass}" data-hl-pending="1">${escapeHtml(code)}</code></pre>`;
   };
@@ -399,14 +389,14 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
   const URL_RE = /^(https?:\/\/[^\s]+)$/i;
 
   renderer.codespan = (code) => {
-    const raw = typeof code === 'string' ? code : String(code);
-    const escaped = escapeHtml(raw);
-    const trimmed = raw.trim();
+
+    const escaped = typeof code === 'string' ? code : String(code);
+    const trimmed = escaped.trim();
     if (COLOR_RE.test(trimmed)) {
       return `<code>${escaped}<span class="mdv-color-dot" style="background:${trimmed}"></span></code>`;
     }
     if (URL_RE.test(trimmed)) {
-      return `<code class="mdv-code-url" data-url="${escapeHtml(trimmed)}">${escaped}<span class="mdv-ext-link-icon" title="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span></code>`;
+      return `<code class="mdv-code-url" data-url="${trimmed}">${escaped}<span class="mdv-ext-link-icon" title="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span></code>`;
     }
     return `<code>${escaped}</code>`;
   };
@@ -548,9 +538,6 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
     return mathJaxLoadPromise;
   }
 
-  // highlight.js — 149KB, only fetched the first time the document actually
-  // contains a fenced code block (see renderer.code's data-hl-pending marker
-  // and the upgrade pass in render()).
   let hljsLoadPromise = null;
   function ensureHljsLoaded() {
     if (window.hljs) return Promise.resolve();
@@ -568,8 +555,6 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
   }
 
   function countNewlines(s) {
-    // Manual scan avoids the array-allocation cost of split('\n')/match(/\n/g),
-    // and — critically — never re-scans text we've already counted.
     let c = 0;
     for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) === 10) c++;
     return c;
@@ -579,11 +564,7 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
 	  let tokens;
 	  try { tokens = marked.lexer(body); } catch (e) { return []; }
 	  let pos = 0;
-	  // nlBefore tracks "newlines in body[0:pos]" incrementally as pos advances
-	  // token by token, so each character of the document is scanned exactly
-	  // once in total across the whole loop — O(n) instead of the previous
-	  // O(n²) (which re-sliced + re-split the document from position 0 on
-	  // every single token, ~12.7s on a 1.2MB file; this pass is <50ms).
+
 	  let nlBefore = 0;
 	  const rawItems = [];
 	  for (const t of tokens) {
@@ -642,7 +623,7 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
 	  const layer = document.getElementById('editorBlockLayer');
 	  if (layer) {
 		layer.innerHTML = escapeHtml(editor.value);
-		layer.scrollTop = editor.scrollTop;   // thêm dòng này — fix lệch vị trí lần đầu mở file
+		layer.scrollTop = editor.scrollTop;
 		layer.scrollLeft = editor.scrollLeft;
 	  }
 	  preview.querySelectorAll('.mdv-block.mdv-block-active').forEach(el => el.classList.remove('mdv-block-active'));
@@ -698,9 +679,6 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
     if (cached !== undefined) return cached;
     const clean = DOMPurify.sanitize(unsafeInnerHtml, PURIFY_OPTS);
     if (blockSanitizeCache.size >= SANITIZE_CACHE_MAX) {
-      // Evict the oldest ~25% (Map preserves insertion order) instead of
-      // clearing everything — a full clear() mid-document thrashes the
-      // cache to zero benefit right when a huge file needs it most.
       const toDrop = Math.floor(SANITIZE_CACHE_MAX / 4);
       const it = blockSanitizeCache.keys();
       for (let i = 0; i < toDrop; i++) blockSanitizeCache.delete(it.next().value);
@@ -728,11 +706,6 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
 	  return `<div class="mdv-block" data-block-i="${i}"><div class="mdv-block-inner">${cleanInner}</div></div>`;
 	}).join('');
 
-    // Frontmatter/footnotes are comparatively tiny (a handful of elements)
-    // and change alongside the rest of the doc anyway, so they're sanitized
-    // fresh each render rather than cached — the caching above is what
-    // matters, since it's the many mostly-unchanged body blocks that made
-    // full-document re-sanitizing expensive.
     const fm = frontmatterTable(meta);
     const fn = renderFootnotes();
     const fmClean = fm ? DOMPurify.sanitize(fm, PURIFY_OPTS) : '';
@@ -760,8 +733,7 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
       else { findCount.textContent = '0/0'; }
     }
 
-    // Mermaid — only fetched/initialized the first time a document actually
-    // contains a ```mermaid block. Subsequent renders reuse the loaded lib.
+
     const mermaidBlocks = preview.querySelectorAll('.mermaid');
     if (mermaidBlocks.length) {
       ensureMermaidLoaded().then(() => {
@@ -778,12 +750,7 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
         }
       }).catch(() => { /* offline / blocked: leave raw math source visible */ });
     }
-    // highlight.js — only fetched the first time the document actually has a
-    // fenced code block (renderer.code marks each with data-hl-pending so
-    // first paint never waits on the 149KB bundle). Once loaded, upgrade
-    // every pending block in place; stale nodes from a since-replaced
-    // render are simply no-ops (harmless, matches the mermaid/MathJax
-    // pattern above).
+
     const pendingCodeBlocks = preview.querySelectorAll('code[data-hl-pending]');
     if (pendingCodeBlocks.length) {
       ensureHljsLoaded().then(() => {
@@ -1380,9 +1347,7 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
         ? 'vendor/hljs-themes/github-dark.min.css'
         : 'vendor/hljs-themes/github.min.css';
     }
-    // Only re-render for mermaid's theme if mermaid has actually been loaded already
-    // (i.e. the current document uses a mermaid diagram). No point loading 3.2MB
-    // of mermaid just because the user switched light/dark theme.
+
     if (window.mermaid) { mermaidReady = false; render(); }
   }
   function toggleTheme() {
@@ -1552,8 +1517,6 @@ A bonus quick-reference for regular expressions, useful with this editor's Find 
 
   editor.setSelectionRange(s, e);
 
-  // Luôn tính thủ công vì markEl nằm trong lớp overlay riêng,
-  // không phải con thật của <textarea> nên scrollIntoView không hoạt động.
   const lineHeight = parseInt(getComputedStyle(editor).lineHeight) || 21;
   const linesBefore = text.substring(0, s).split('\n').length;
   const visibleLines = Math.floor(editor.clientHeight / lineHeight);
