@@ -1,22 +1,3 @@
-/* Self-hosted fonts — no external request, no @import chain.
-   Drop the actual font files into src/fonts/:
-
-   Inter is a real variable font published as a single ready-made woff2 —
-   confirmed to exist at:
-     https://github.com/rsms/inter/blob/master/docs/font-files/InterVariable.woff2
-     src/fonts/InterVariable.woff2
-
-   JetBrains Mono's official repo only ships a *variable* font as .ttf
-   (fonts/variable/JetBrainsMono[wght].ttf) — building a variable .woff2
-   from it requires running their Python build script yourself. There's no
-   "JetBrainsMono-Variable.woff2" you can just download. What IS published
-   ready-to-use are the static per-weight woff2 files, so we use those —
-   confirmed to exist (with sizes) at:
-     https://github.com/JetBrains/JetBrainsMono/blob/master/fonts/webfonts/JetBrainsMono-Regular.woff2 (400, 90.2KB)
-     https://github.com/JetBrains/JetBrainsMono/blob/master/fonts/webfonts/JetBrainsMono-Medium.woff2  (500, 92.1KB)
-     https://github.com/JetBrains/JetBrainsMono/blob/master/fonts/webfonts/JetBrainsMono-Bold.woff2    (700, 92.4KB)
-   (SemiBold/600 likely also exists there — check the folder listing
-   before relying on it: https://github.com/JetBrains/JetBrainsMono/tree/master/fonts/webfonts) */
 @font-face {
   font-family: 'Inter Variable';
   src: url('src/fonts/InterVariable.woff2') format('woff2-variations'),
